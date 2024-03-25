@@ -3,11 +3,6 @@ provider "azurerm" {
     features {}
 }
 
-#management group
-data "azurerm_management_group" "mgmt_grp" {
-  display_name = var.mgmt_name
-}
-
 resource "azurerm_policy_definition" "addTagToRG" {
   count = length(var.mandatory_tag_keys)
 
@@ -43,16 +38,16 @@ resource "azurerm_policy_definition" "addTagToRG" {
           "roleDefinitionIds" : [
             "/providers/microsoft.authorization/roleDefinitions/b24988ac-6180-42a0-ab88-20f7382dd24c"
           ],
-          "operations" : [
+          "operations": [
             {
-              "operation" : "add",
-              "field" : "[concat('tags[', parameters('tagName'), ']')]",
-              "value" : "[parameters('tagValue')]"
+              "operation": "add",
+              "field": "[concat('tags[', parameters('tagName'), ']')]",
+              "value": "[resourceGroup().tags[parameters('tagName')]]"
             }
           ]
         }
+        }
       }
-    }
   )
   parameters = jsonencode(
     {
@@ -63,28 +58,33 @@ resource "azurerm_policy_definition" "addTagToRG" {
           "description" : "Name of the tag, such as ${var.mandatory_tag_keys[count.index]}"
         },
         "defaultValue" : "${var.mandatory_tag_keys[count.index]}"
-      },
-      "tagValue" : {
-        "type" : "String",
-        "metadata" : {
-          "displayName" : "Tag Value '${var.mandatory_tag_value}'",
-          "description" : "Value of the tag, such as '${var.mandatory_tag_value}'"
-        },
-        "defaultValue" : "'${var.mandatory_tag_value}'"
       }
     }
   )
 }
 
+#sub
+data "azurerm_subscription" "current" {}
 
 #management group policy assignment
-resource "azurerm_management_group_policy_assignment" "tag_mgmt" {
-  count = length(var.pol_assignment_name)
-  name                 = var.pol_assignment_name
-  policy_definition_id = azurerm_policy_definition.addTagToRG[count.index].id
-  management_group_id  = data.azurerm_management_group.mgmt_grp.id
-  description = "Assignment of the Tag Governance initiative to Management Group."
-  location = var.location
-  identity { type = "SystemAssigned" }
-  display_name = "Tag Governance v2"
+resource "azurerm_subscription_policy_assignment" "tag_mgmt" {
+    count = length(var.mandatory_tag_keys)
+    name                 = "assign-name-${var.mandatory_tag_keys[count.index]}"
+    policy_definition_id = element(azurerm_policy_definition.addTagToRG.*.id,count.index)
+    subscription_id  = data.azurerm_subscription.current.id
+    description = "Assignment of the Tag Governance initiative to Management Group."
+    location = var.location
+    identity { type = "SystemAssigned" }
+    display_name = "disp-name-${var.mandatory_tag_keys[count.index]}"
+    metadata = <<METADATA
+    {
+    "category": "General"
+    }
+    METADATA
+    parameters = jsonencode({
+    "tagName": {
+    "value":  var.mandatory_tag_keys[count.index],
+  }
+}
+  )
 }

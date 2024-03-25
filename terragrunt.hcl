@@ -5,7 +5,7 @@ remote_state {
     config = {
         resource_group_name = "tfstorage"
         storage_account_name = "terraformrocks"
-        container_name = "maroc"
+        container_name = "hamza"
         key = "${path_relative_to_include()}/terraform.tfstate"
     }
     generate = {
@@ -17,7 +17,6 @@ remote_state {
 #var sthg like tfvars
 inputs = {
     location = "eastus"
-    pol_assignment_name = "Tag policy the grunt way"
     mandatory_tag_keys = [
     "Application",
     "CostCenter",
@@ -26,7 +25,7 @@ inputs = {
     "Owner",
     "Support"
   ]
-    mandatory_tag_value = "TBC"
+    #mandatory_tag_value = "TBC"
     policy_definition_category = "custom"
     mgmt_name = "MadeFromMorocco"
 }

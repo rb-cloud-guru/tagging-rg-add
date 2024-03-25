@@ -27,7 +27,7 @@ inputs = {
   ]
     #mandatory_tag_value = "TBC"
     policy_definition_category = "custom"
-    mgmt_name = "MadeFromMorocco"
+    #mgmt_name = ""
 }
  
 
